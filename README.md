@@ -14,9 +14,11 @@ API**, so your *other* agents and scripts can:
 
 ## Install in Minds
 
-[**▶ Open in Minds**](minds://create?git_url=https://github.com/boweiliu/export-minds-chat-interface) — creates a new workspace from this inspiration.
+[**▶ Open in Minds**](https://boweiliu.github.io/open-in-minds/?git_url=https://github.com/boweiliu/export-minds-chat-interface) — one click creates a new Minds workspace from this inspiration.
 
-If the link doesn't open the app, paste this into the Minds create flow:
+That button is an HTTPS redirector to the app's `minds://` deep link (GitHub
+strips custom-scheme links from READMEs). If it doesn't launch the app, paste
+this straight into your browser's address bar:
 
 ```
 minds://create?git_url=https://github.com/boweiliu/export-minds-chat-interface
