@@ -12,6 +12,16 @@ API**, so your *other* agents and scripts can:
   session), and
 - **read any conversation back** — history plus a live stream.
 
+## Install in Minds
+
+[**▶ Open in Minds**](minds://create?git_url=https://github.com/boweiliu/export-minds-chat-interface) — creates a new workspace from this inspiration.
+
+If the link doesn't open the app, paste this into the Minds create flow:
+
+```
+minds://create?git_url=https://github.com/boweiliu/export-minds-chat-interface
+```
+
 ## The point is the agentic interface
 
 The headline is the API. It's meant to be driven by agents: clean REST + SSE
