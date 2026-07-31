@@ -1,52 +1,59 @@
-# Your workspace
+<p align="center">
+  <img alt="The Chat Bridge web console: an agent list with live status, the selected conversation, and a box to send a message" width="820" src="system/apps/chat_bridge/docs/webui-console.png">
+</p>
 
-This folder is your mind's home: everything it knows, everything it builds,
-and the machinery that keeps it running.
+<h1 align="center">Export Minds Chat Interface</h1>
 
-## Creations
+<p align="center"><b>A REST API for driving a minds workspace's agents from outside — with a web UI that runs on the exact same API.</b></p>
 
-Broadly, in Minds you make "creations". These can be "code" (apps, skills, and
-the services behind them) or "data" (documents, images, notes).
+## Install in Minds
 
-Minds makes this easier by defining some conventions for the common things
-you'll want to make:
+<p align="center">
+  <a href="https://boweiliu.github.io/open-in-minds/?git_url=https://github.com/boweiliu/export-minds-chat-interface"><img alt="Open in Minds" height="64" src="https://img.shields.io/badge/Open%20in%20Minds-D8D1C0?style=for-the-badge"></a>
+</p>
 
-1. an "app" - something you can open as a tab and interact with
-2. a "skill" - teaches your mind how to do work you care about. A skill that
-   is automatically run on a schedule is called an "automation" (the
-   machinery that runs them lives in `system/libs/automations/`; the weekly
-   Caretaker is the built-in example)
-3. some "data" - documents, images, notes, or data created by your apps and
-   skills
-4. some "customizations" - changes to any of the above. Everything in Minds
-   can be modified by you!
+Didn't work? Create a Minds workspace and paste this to your agent:
+`/use-inspiration https://github.com/boweiliu/export-minds-chat-interface`
 
-## What's here
+## Why you care
 
-- `apps/` - Everything you can open as a tab: the built-in apps (the
-  terminal, the browser) and the apps your mind builds for you. (A shortcut
-  to `system/apps/`.)
-- `skills/` - Everything your mind knows how to do: the built-in skills and
-  the ones it has learned for you. (A shortcut to `.agents/skills/`.)
-- `data/` - Your workspace's data: documents and project folders, files
-  you've uploaded, your mind's memories, and each app's stored data.
-- `docs/` - Guides to this workspace: what it is, how it works, and a history
-  of where it came from.
-- `system/` - The machinery that runs the workspace: the apps themselves,
-  background services, scripts, and configuration. You can look around (every
-  folder has a README), and your mind maintains it for you.
+Your Minds workspace has AI agents working for you — but normally you can only reach them from inside the Minds app. This gives them a secure front door, so you can check on them and send them tasks from anywhere: your phone, a quick script, or even another AI assistant. One key, like a password, unlocks it. With that key you can see what each agent is doing right now, send any of them a message, and read the whole conversation back.
 
-A few housekeeping files live alongside them:
+## How to use it — basic
 
-- `README.md` - This file.
-- `CLAUDE.md` - The standing instructions your mind follows.
-- `pyproject.toml` and `uv.lock` - The Python project definition; the tooling
-  requires them at the top level.
+Open the **chat-bridge** tab (or its web page) and paste your key once. You get a simple console: a list of your agents, each with a live status — idle, thinking, or working on something — the conversation you click into, and a box to type a message straight to that agent.
 
-## Where things are kept safe
+Want it on your phone? The page has a share link and a QR code that open the same console there. No code, nothing to install.
 
-The workspace is a git repository: code and configuration changes are
-committed as your mind works. Everything under `data/` is deliberately kept
-out of git (it can be large, personal, or both) and is protected by the
-workspace's continuous encrypted backup instead, along with the rest of the
-workspace. See `docs/` for details.
+Want to connect your other AI agents and let them drive your Minds workspace? Give them the bridge's URL and this key, and point them at `/llms.txt`.
+
+## How to use it — advanced
+
+Everything the console does is a plain REST + SSE API, so your own scripts can drive it too. The key is generated on first boot into `data/.secrets/chat_bridge.env` — read it there, or ask your workspace agent. Authenticate with `Authorization: Bearer <token>` on every request.
+
+```bash
+export CHAT_BRIDGE_URL="https://<your-bridge-host>"
+export CHAT_BRIDGE_TOKEN="<the bridge token>"
+
+# list agents (with live status)
+curl -s -H "Authorization: Bearer $CHAT_BRIDGE_TOKEN" "$CHAT_BRIDGE_URL/api/agents"
+
+# send a message into an agent's session (id OR unique name)
+curl -s -X POST -H "Authorization: Bearer $CHAT_BRIDGE_TOKEN" \
+  -H "Content-Type: application/json" -d '{"message":"status?"}' \
+  "$CHAT_BRIDGE_URL/api/agents/<agent-id-or-name>/message"
+
+# follow a conversation live over SSE
+curl -sN -H "Authorization: Bearer $CHAT_BRIDGE_TOKEN" \
+  "$CHAT_BRIDGE_URL/api/agents/<agent-id-or-name>/stream"
+```
+
+**Python client.** `src/chat_bridge/client.py` is a single file with zero third-party dependencies — copy it anywhere with Python 3, or use it in-repo (`uv run chat-bridge-client list` / `send` / `tail`).
+
+## Auth & security
+
+A single bearer token gates every agent operation (constant-time check; generated on first boot). Without it you can see the API's shape but read no data and take no action. A dedicated tunnel exposes only the token-gated bridge, never the workspace's raw internal API on loopback.
+
+---
+
+*Built as a minds inspiration — a bootable snapshot another mind can adopt and adapt.*
