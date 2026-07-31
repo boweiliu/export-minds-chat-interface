@@ -1,31 +1,103 @@
-# export minds chat interface
+# Export Minds Chat Interface
 
-A REST API (plus a demo web UI) to list, message, and read a minds workspace's agents from outside.
+**A REST API for driving a minds workspace's agents from outside — with a web UI
+that runs on the exact same API.**
 
-This inspiration puts a single token-gated door in front of a minds workspace's
-own chat interface, so you can reach your agents from outside -- a phone, a
-script, or another agent running elsewhere. With one bearer token it exposes a
-REST + SSE API to list the workspace's agents (with live idle / thinking /
-running-a-tool status), send a message straight into any agent's live session,
-and read any conversation back (full history plus a live stream). It ships a demo
-web console for humans and a zero-dependency Python client for machines, and an
-account-less Cloudflare quick tunnel gives it a public URL and QR code -- while
-only the token-gated bridge is ever exposed, never the raw API underneath.
+A minds workspace's agents normally take instructions only through the built-in
+chat UI. This exports that capability as a small, token-authenticated **REST
+API**, so your *other* agents and scripts can:
 
-This repository is a published **minds inspiration**: a clean, bootable
-snapshot of the apps and features a mind built, ready to adapt into your own.
-It is NOT the generic workspace template -- it is this specific project.
+- **list** the agents in the workspace,
+- **send a message into any agent's chat** (delivered straight into its live
+  session), and
+- **read any conversation back** — history plus a live stream.
 
-## Use it
+## Install in Minds
 
-- **Create a new mind from it:** point a new minds workspace at this repo's
-  URL. On first boot the mind reads the inspiration and helps you connect your
-  own accounts and adapt it.
-- **Bring it into an existing mind:** run `/use-inspiration <this repo's URL>`.
+[**▶ Open in Minds**](https://boweiliu.github.io/open-in-minds/?git_url=https://github.com/boweiliu/export-minds-chat-interface) — one click creates a new Minds workspace from this inspiration.
 
-## What's inside
+That button is an HTTPS redirector to the app's `minds://` deep link (GitHub
+strips custom-scheme links from READMEs). If it doesn't launch the app, paste
+this straight into your browser's address bar:
 
-- **export minds chat interface** -- [`inspiration-export-minds-chat-interface.md`](inspiration-export-minds-chat-interface.md) (published now)
+```
+minds://create?git_url=https://github.com/boweiliu/export-minds-chat-interface
+```
 
-Each `inspiration-<slug>.md` is the full manifest for that inspiration: what
-it is, how it works, the prerequisites it needs, and how to adapt it.
+## The point is the agentic interface
+
+The headline is the API. It's meant to be driven by agents: clean REST + SSE
+endpoints, an **`llms.txt` guide** you hand to an agent so it can drive
+everything with no other instructions, and a **zero-dependency Python client**.
+
+The included **web console and landing page are a demonstration** — a
+human-friendly client that talks to the *exact same REST API* your agents use
+(the same `/api/agents`, `/api/agents/<id>/message`, and `/api/agents/<id>/events`
+endpoints; it just signs in with a cookie instead of a bearer header). The UI
+isn't a separate system — it's proof the one interface works for people and
+machines alike. It's also reachable from a phone via the workspace's share link.
+
+## What it looks like
+
+![The Chat Bridge web console](libs/chat_bridge/docs/webui-console.png)
+
+*The web console: the agent list with live status (idle / thinking / running a
+tool), the selected conversation, and a box to send a message — all driven by the
+same REST API described below.*
+
+## The agent guide (`llms.txt`)
+
+Hand an agent the token and point it at `/llms.txt`; it can drive the whole API
+from there, with the live base URL already filled in. A trimmed sample:
+
+```text
+# Chat Bridge -- API guide for agents
+
+## Base URL
+https://<your-bridge-host>
+
+## Authentication
+Send this header on EVERY request (ask the workspace owner for the token):
+  Authorization: Bearer $CHAT_BRIDGE_TOKEN
+
+## Endpoints
+GET  /api/agents                              -> {"agents":[{id,name,state}, ...]}
+POST /api/agents/<id-or-name>/message         body: {"message":"..."}
+GET  /api/agents/<id-or-name>/events?limit=50 -> {events, offset, total}
+GET  /api/agents/<id-or-name>/stream          -> live Server-Sent Events (SSE):
+                                                 text/event-stream, one `data: <event json>` frame per new event
+```
+
+Read a conversation live over SSE:
+
+```bash
+curl -sN -H "Authorization: Bearer $CHAT_BRIDGE_TOKEN" \
+  "$CHAT_BRIDGE_URL/api/agents/<agent-id-or-name>/stream"
+```
+
+## Auth & security
+
+A single bearer token gates every agent operation (constant-time check;
+generated on first boot). Without it you can see the API's shape but read no data
+and take no action. The token grants full read of every conversation, so treat
+it like a password. A dedicated tunnel exposes only the token-gated bridge, never
+the workspace's raw internal API.
+
+## Quickstart (agents)
+
+```bash
+export CHAT_BRIDGE_URL="https://<your-bridge-host>"
+export CHAT_BRIDGE_TOKEN="<the bridge token>"
+
+curl -s -H "Authorization: Bearer $CHAT_BRIDGE_TOKEN" "$CHAT_BRIDGE_URL/api/agents"
+
+curl -s -X POST -H "Authorization: Bearer $CHAT_BRIDGE_TOKEN" \
+  -H "Content-Type: application/json" -d '{"message":"status?"}' \
+  "$CHAT_BRIDGE_URL/api/agents/<agent-id-or-name>/message"
+```
+
+Or just tell your agent: *fetch `$CHAT_BRIDGE_URL/llms.txt` and use this token.*
+
+---
+
+*Built as a minds inspiration — a bootable snapshot another mind can adopt and adapt.*
